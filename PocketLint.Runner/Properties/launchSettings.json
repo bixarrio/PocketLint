@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "PocketLint.Runner": {
+      "commandName": "Project",
+      "commandLineArgs": "\"E:\\Sandbox\\Miscelaneous\\PocketLint\\MyDemoGame\\game.plcfg\""
+    }
+  }
+}

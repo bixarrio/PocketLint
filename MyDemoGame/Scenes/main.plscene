@@ -1,0 +1,241 @@
+{
+    "entity": {
+        "children": [
+            {
+                "entity": {
+                    "name": "Player",
+                    "tag": "Player",
+                    "components": [
+                        {
+                            "type": "EntityTransform",
+                            "properties": {
+                                "LocalX": {
+                                    "type": "float",
+                                    "value": 60
+                                },
+                                "LocalY": {
+                                    "type": "float",
+                                    "value": 4
+                                }
+                            }
+                        },
+                        {
+                            "type": "SpriteRenderer",
+                            "properties": {
+                                "SpriteIndex": {
+                                    "type": "byte",
+                                    "value": 4
+                                },
+                                "SortOrder": {
+                                    "type": "int",
+                                    "value": 2
+                                }
+                            }
+                        },
+                        {
+                            "type": "Collider",
+                            "properties": {
+                                "Layer": {
+                                    "type": "uint",
+                                    "value": 2
+                                },
+                                "Mask": {
+                                    "type": "uint",
+                                    "value": 4
+                                }
+                            }
+                        },
+                        {
+                            "type": "Rigidbody"
+                        },
+                        {
+                            "type": "MyDemoGame.PlayerController"
+                        }
+                    ],
+                    "children": [
+                        {
+                            "entity": {
+                                "name": "PickupController",
+                                "components": [
+                                    {
+                                        "type": "Collider",
+                                        "properties": {
+                                            "Layer": {
+                                                "type": "uint",
+                                                "value": 2
+                                            },
+                                            "Mask": {
+                                                "type": "uint",
+                                                "value": 24
+                                            },
+                                            "IsTrigger": {
+                                                "type": "boolean",
+                                                "value": true
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "type": "MyDemoGame.PlayerPickup"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                "entity": {
+                    "name": "Enemy",
+                    "components": [
+                        {
+                            "type": "EntityTransform",
+                            "properties": {
+                                "LocalX": {
+                                    "type": "float",
+                                    "value": 60
+                                },
+                                "LocalY": {
+                                    "type": "float",
+                                    "value": 60
+                                }
+                            }
+                        },
+                        {
+                            "type": "SpriteRenderer",
+                            "properties": {
+                                "SpriteIndex": {
+                                    "type": "byte",
+                                    "value": 11
+                                },
+                                "SortOrder": {
+                                    "type": "int",
+                                    "value": 1
+                                }
+                            }
+                        },
+                        {
+                            "type": "Collider",
+                            "properties": {
+                                "Layer": {
+                                    "type": "uint",
+                                    "value": 4
+                                },
+                                "Mask": {
+                                    "type": "uint",
+                                    "value": 2
+                                }
+                            }
+                        },
+                        {
+                            "type": "Rigidbody"
+                        },
+                        {
+                            "type": "MyDemoGame.EnemyController"
+                        }
+                    ],
+                    "children": []
+                }
+            },
+            {
+                "entity": {
+                    "name": "Chest",
+                    "components": [
+                        {
+                            "type": "EntityTransform"
+                        },
+                        {
+                            "type": "SpriteRenderer",
+                            "properties": {
+                                "SpriteIndex": {
+                                    "type": "byte",
+                                    "value": 57
+                                },
+                                "SortOrder": {
+                                    "type": "int",
+                                    "value": 0
+                                }
+                            }
+                        },
+                        {
+                            "type": "Collider",
+                            "properties": {
+                                "Layer": {
+                                    "type": "uint",
+                                    "value": 8
+                                },
+                                "Mask": {
+                                    "type": "uint",
+                                    "value": 2
+                                },
+                                "IsTrigger": {
+                                    "type": "boolean",
+                                    "value": true
+                                }
+                            }
+                        },
+                        {
+                            "type": "MyDemoGame.Chest",
+                            "properties": {
+                                "ChestIdentifier": {
+                                    "type": "uint",
+                                    "value": 1
+                                }
+                            }
+                        }
+                    ],
+                    "children": []
+                }
+            },
+            {
+                "entity": {
+                    "name": "Key",
+                    "components": [
+                        {
+                            "type": "EntityTransform"
+                        },
+                        {
+                            "type": "SpriteRenderer",
+                            "properties": {
+                                "SpriteIndex": {
+                                    "type": "byte",
+                                    "value": 90
+                                },
+                                "SortOrder": {
+                                    "type": "int",
+                                    "value": 0
+                                }
+                            }
+                        },
+                        {
+                            "type": "Collider",
+                            "properties": {
+                                "Layer": {
+                                    "type": "uint",
+                                    "value": 16
+                                },
+                                "Mask": {
+                                    "type": "uint",
+                                    "value": 2
+                                },
+                                "IsTrigger": {
+                                    "type": "boolean",
+                                    "value": true
+                                }
+                            }
+                        },
+                        {
+                            "type": "MyDemoGame.Key",
+                            "properties": {
+                                "LinkedChestIdentifier": {
+                                    "type": "uint",
+                                    "value": 1
+                                }
+                            }
+                        }
+                    ],
+                    "children": []
+                }
+            }
+        ]
+    }
+}
