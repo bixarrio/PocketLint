@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <EnableSourceGenerators>true</EnableSourceGenerators>
+        
+        <EmitCompilerGeneratedFiles>false</EmitCompilerGeneratedFiles>
+        <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="System.Text.Json" Version="8.0.5" PrivateAssets="all" />
+        <PackageReference Include="Scriban" Version="5.7.0" PrivateAssets="all" />
+    </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="Resources\sheet128x128.png">
+          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </EmbeddedResource>
+    </ItemGroup>
+    <ItemGroup>
+      <Folder Include="Scenes\" />
+    </ItemGroup>
+    <ItemGroup>
+        <AdditionalFiles Include="Config/build.plconfig" Visible="true" />
+        <AdditionalFiles Include="Scenes/main.plscene" Visible="true" />
+    </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\PocketLint.SourceGenerators\PocketLint.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    </ItemGroup>
+    <ItemGroup>
+      <Reference Include="PocketLint.Core">
+        <HintPath>..\PocketLint.Core\bin\Debug\net8.0\PocketLint.Core.dll</HintPath>
+      </Reference>
+      <Reference Include="PocketLint.Tools">
+        <HintPath>..\PocketLint.Tools\bin\Debug\net8.0\PocketLint.Tools.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+</Project>

@@ -13,6 +13,7 @@
 x64/
 [Bb]in/
 [Oo]bj/
+.vs/
 
 # MSTest test Results
 [Tt]est[Rr]esult*/
@@ -131,3 +132,7 @@ $RECYCLE.BIN/
 .DS_Store
 
 _NCrunch*
+
+
+# PocketLint Demo
+MyDemoGame/build/

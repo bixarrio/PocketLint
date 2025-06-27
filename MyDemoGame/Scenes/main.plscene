@@ -1,0 +1,312 @@
+{
+    "Scene": {
+        "SpriteSheet":  "sheet128x128.png",
+        "Entities": [
+            {
+                "Name": "Player",
+                "Tag": "Player",
+                "Components": [
+                    {
+                        "Type": "EntityTransform",
+                        "Properties": {
+                            "LocalX": {
+                                "Type": "Single",
+                                "Value": 60
+                            },
+                            "LocalY": {
+                                "Type": "Single",
+                                "Value": 4
+                            }
+                        }
+                    },
+                    {
+                        "Type": "SpriteRenderer",
+                        "Properties": {
+                            "SpriteIndex": {
+                                "Type": "Byte",
+                                "Value": 4
+                            },
+                            "SortOrder": {
+                                "Type": "Int32",
+                                "Value": 2
+                            }
+                        }
+                    },
+                    {
+                        "Type": "Collider",
+                        "Properties": {
+                            "Layer": {
+                                "Type": "UInt32",
+                                "Value": 2
+                            },
+                            "Mask": {
+                                "Type": "UInt32",
+                                "Value": 4
+                            },
+                            "IsTrigger": {
+                                "Type": "Boolean",
+                                "Value": false
+                            }
+                        }
+                    },
+                    { "Type": "Rigidbody" },
+                    { "Type": "MyDemoGame.Scripts.PlayerController" }
+                ],
+                "Children": [
+                    {
+                        "Name": "PickupController",
+                        "Components": [
+                            {
+                                "Type": "EntityTransform",
+                                "Properties": {
+                                    "LocalX": {
+                                        "Type": "Single",
+                                        "Value": 0
+                                    },
+                                    "LocalY": {
+                                        "Type": "Single",
+                                        "Value": 0
+                                    }
+                                }
+                            },
+                            {
+                                "Type": "Collider",
+                                "Properties": {
+                                    "Layer": {
+                                        "Type": "UInt32",
+                                        "Value": 2
+                                    },
+                                    "Mask": {
+                                        "Type": "UInt32",
+                                        "Value": 24
+                                    },
+                                    "IsTrigger": {
+                                        "Type": "Boolean",
+                                        "Value": true
+                                    }
+                                }
+                            },
+                            { "Type": "MyDemoGame.Scripts.PlayerPickup" }
+                        ]
+                    },
+                    {
+                        "Name": "PickupIndicator",
+                        "Components": [
+                            {
+                                "Type": "EntityTransform",
+                                "Properties": {
+                                    "LocalX": {
+                                        "Type": "Single",
+                                        "Value": 0
+                                    },
+                                    "LocalY": {
+                                        "Type": "Single",
+                                        "Value": 8
+                                    }
+                                }
+                            },
+                            {
+                                "Type": "SpriteRenderer",
+                                "Properties": {
+                                    "SpriteIndex": {
+                                        "Type": "Byte",
+                                        "Value": 255
+                                    },
+                                    "SortOrder": {
+                                        "Type": "Int32",
+                                        "Value": 5
+                                    }
+                                }
+                            },
+                            { "Type": "MyDemoGame.Scripts.PickupIndicator" }
+                        ]
+                    },
+                    {
+                        "Name": "PlayerHealth",
+                        "Components": [
+                            {
+                                "Type": "EntityTransform",
+                                "Properties": {
+                                    "LocalX": {
+                                        "Type": "Single",
+                                        "Value": 0
+                                    },
+                                    "LocalY": {
+                                        "Type": "Single",
+                                        "Value": 0
+                                    }
+                                }
+                            },
+                            { "Type": "MyDemoGame.Scripts.PlayerHealth" }
+                        ]
+                    }
+                ]
+            },
+            {
+                "Name": "Enemy",
+                "Tag": "Enemy",
+                "Components": [
+                    {
+                        "Type": "EntityTransform",
+                        "Properties": {
+                            "LocalX": {
+                                "Type": "Single",
+                                "Value": 60
+                            },
+                            "LocalY": {
+                                "Type": "Single",
+                                "Value": 68
+                            }
+                        }
+                    },
+                    {
+                        "Type": "SpriteRenderer",
+                        "Properties": {
+                            "SpriteIndex": {
+                                "Type": "Byte",
+                                "Value": 11
+                            },
+                            "SortOrder": {
+                                "Type": "Int32",
+                                "Value": 1
+                            }
+                        }
+                    },
+                    {
+                        "Type": "Collider",
+                        "Properties": {
+                            "Layer": {
+                                "Type": "UInt32",
+                                "Value": 4
+                            },
+                            "Mask": {
+                                "Type": "UInt32",
+                                "Value": 2
+                            },
+                            "IsTrigger": {
+                                "Type": "Boolean",
+                                "Value": false
+                            }
+                        }
+                    },
+                    { "Type": "Rigidbody" },
+                    { "Type": "MyDemoGame.Scripts.EnemyController" }
+                ]
+            },
+            {
+                "Name": "Chest",
+                "Components": [
+                    {
+                        "Type": "EntityTransform",
+                        "Properties": {
+                            "LocalX": {
+                                "Type": "Single",
+                                "Value": 0
+                            },
+                            "LocalY": {
+                                "Type": "Single",
+                                "Value": 0
+                            }
+                        }
+                    },
+                    {
+                        "Type": "SpriteRenderer",
+                        "Properties": {
+                            "SpriteIndex": {
+                                "Type": "Byte",
+                                "Value": 57
+                            },
+                            "SortOrder": {
+                                "Type": "Int32",
+                                "Value": 1
+                            }
+                        }
+                    },
+                    {
+                        "Type": "Collider",
+                        "Properties": {
+                            "Layer": {
+                                "Type": "UInt32",
+                                "Value": 8
+                            },
+                            "Mask": {
+                                "Type": "UInt32",
+                                "Value": 2
+                            },
+                            "IsTrigger": {
+                                "Type": "Boolean",
+                                "Value": true
+                            }
+                        }
+                    },
+                    {
+                        "Type": "MyDemoGame.Scripts.Chest",
+                        "Properties": {
+                            "ChestIdentifier": {
+                                "Type": "Int32",
+                                "Value": 1
+                            }
+                        }
+                    }
+                ]
+            },
+            {
+                "Name": "Key",
+                "Components": [
+                    {
+                        "Type": "EntityTransform",
+                        "Properties": {
+                            "LocalX": {
+                                "Type": "Single",
+                                "Value": 0
+                            },
+                            "LocalY": {
+                                "Type": "Single",
+                                "Value": 0
+                            }
+                        }
+                    },
+                    {
+                        "Type": "SpriteRenderer",
+                        "Properties": {
+                            "SpriteIndex": {
+                                "Type": "Byte",
+                                "Value": 90
+                            },
+                            "SortOrder": {
+                                "Type": "Int32",
+                                "Value": 1
+                            }
+                        }
+                    },
+                    {
+                        "Type": "Collider",
+                        "Properties": {
+                            "Layer": {
+                                "Type": "UInt32",
+                                "Value": 16
+                            },
+                            "Mask": {
+                                "Type": "UInt32",
+                                "Value": 2
+                            },
+                            "IsTrigger": {
+                                "Type": "Boolean",
+                                "Value": true
+                            }
+                        }
+                    },
+                    {
+                        "Type": "MyDemoGame.Scripts.Key",
+                        "Properties": {
+                            "LinkedChestIdentifier": {
+                                "Type": "Int32",
+                                "Value": 1
+                            }
+                        }
+                    }
+                ]
+            }
+        ]
+    }
+}

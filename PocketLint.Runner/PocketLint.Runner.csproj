@@ -1,14 +1,27 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+    <PropertyGroup>
+        <OutputType>Library</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\PocketLint.Core\PocketLint.Core.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+      <None Remove="Resources\pl.png" />
+    </ItemGroup>
 
+    <ItemGroup>
+      <EmbeddedResource Include="Resources\pl.png" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="OpenTK" Version="4.9.4" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\PocketLint.Core\PocketLint.Core.csproj" />
+        <ProjectReference Include="..\PocketLint.Tools\PocketLint.Tools.csproj" />
+    </ItemGroup>
 </Project>

@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Reference Include="..\PocketLint.Core\bin\Debug\net8.0\PocketLint.Core.dll" />
+        <Reference Include="..\PocketLint.Tools\bin\Debug\net8.0\PocketLint.Tools.dll" />
+        <Reference Include="..\PocketLint.Runner\bin\Debug\net8.0\PocketLint.Runner.dll" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Mono.Cecil" Version="0.11.5" />
+        <PackageReference Include="Scriban" Version="5.7.0" />
+    </ItemGroup>
+
+</Project>

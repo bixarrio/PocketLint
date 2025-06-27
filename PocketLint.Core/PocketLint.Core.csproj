@@ -5,6 +5,10 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="OpenTK" Version="4.8.2" />
+      <EmbeddedResource Include="Rendering\fragment.glsl" />
+      <EmbeddedResource Include="Rendering\vertex.glsl" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="OpenTK" Version="4.9.4" />
     </ItemGroup>
 </Project>
