@@ -16,7 +16,7 @@ public static class SpriteSheetImporter
 
     #region Public Methods
 
-    public static void Import(string path, in SpriteSheet target)
+    public static void Import(string path, SpriteSheet target)
     {
         if (string.IsNullOrWhiteSpace(path))
             throw new ArgumentException("PNG Path cannot be null or empty", nameof(path));
@@ -25,6 +25,24 @@ public static class SpriteSheetImporter
         if (image.Width != EXPECTED_WIDTH || image.Height != EXPECTED_HEIGHT)
             throw new ArgumentException($"PNG must be {EXPECTED_WIDTH}x{EXPECTED_HEIGHT}, got {image.Width}x{image.Height}");
 
+        ImportSpriteSheet(image, target);
+    }
+
+    public static void Import(Stream stream, SpriteSheet target)
+    {
+        using var image = Image.Load<Rgba32>(stream);
+        if (image.Width != EXPECTED_WIDTH || image.Height != EXPECTED_HEIGHT)
+            throw new ArgumentException($"PNG must be {EXPECTED_WIDTH}x{EXPECTED_HEIGHT}, got {image.Width}x{image.Height}");
+
+        ImportSpriteSheet(image, target);
+    }
+
+    #endregion
+
+    #region Private Methods
+
+    private static void ImportSpriteSheet(Image<Rgba32> image, SpriteSheet target)
+    {
         var palette = Scene.Palette.GetColorData();
 
         for (var spriteIndex = 0; spriteIndex < SpriteSheet.SPRITE_COUNT; spriteIndex++)

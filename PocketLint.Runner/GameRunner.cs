@@ -3,9 +3,12 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using PocketLint.Core.Components;
 using PocketLint.Core.Entities;
 using PocketLint.Core.Logging;
 using PocketLint.Core.Rendering;
+using PocketLint.Core.TimeSystem;
+using PocketLint.Tools;
 using ErrorCode = OpenTK.Graphics.OpenGL4.ErrorCode;
 
 namespace PocketLint.Runner;
@@ -41,7 +44,10 @@ public class GameRunner
         var entityManager = new EntityManager();
         _frameBuffer = new FrameBuffer(WIDTH, HEIGHT);
         _renderer = new RenderingSystem(shaderLoader, textureManager);
-        _ = new Scene(config.StartScene, _window.KeyboardState, entityManager);
+
+        SceneRegistry.Register("splashScene", () => SplashSceneSetup(config.StartScene));
+
+        _ = new Scene("splashScene", _window.KeyboardState, entityManager);
 
         _window.Load += OnLoad;
         _window.UpdateFrame += OnUpdate;
@@ -113,6 +119,61 @@ public class GameRunner
         if (error != ErrorCode.NoError)
         {
             Logger.Error($"GL error: {error}");
+        }
+    }
+
+    private void SplashSceneSetup(string startScene)
+    {
+        var id = Scene.CreateEntity("Splash");
+        Scene.AddComponent<SplashRenderer>(id);
+        Scene.AddComponent<GameSceneLoader>(id).GameSceneName = startScene;
+    }
+
+    #endregion
+
+    #region Classes and Structs
+
+    class SplashRenderer : Renderer
+    {
+        byte[] _splashImage;
+
+        public override void Init()
+        {
+            _splashImage = GetSplashBytes();
+        }
+
+        public override void Render(FrameBuffer frameBuffer)
+        {
+            frameBuffer.DrawToScreen(_splashImage, 0, (uint)_splashImage.Length);
+        }
+
+        private byte[] GetSplashBytes()
+        {
+            var assembly = GetType().Assembly;
+            using var stream = assembly.GetManifestResourceStream($"PocketLint.Runner.Resources.pl.png");
+            if (stream == null)
+            {
+                Logger.Error("No embedded resources found");
+                var resources = assembly.GetManifestResourceNames() ?? Array.Empty<string>();
+                Logger.Log($"Resources available: {string.Join(", ", resources)}");
+                return new byte[0];
+            }
+            return ImageImporter.ImportStream(stream, flipY: true);
+        }
+    }
+    class GameSceneLoader : GameScript
+    {
+        float _timer = 3f;
+        public string GameSceneName { get; set; }
+
+        public override void Update()
+        {
+            _timer -= Time.DeltaTime;
+            if (_timer <= 0)
+            {
+                Logger.Log($"Splash time over. Load game scene '{GameSceneName}'");
+                Scene.LoadScene(GameSceneName);
+            }
         }
     }
 

@@ -29,12 +29,12 @@ public partial class GameConfig
 
     #region Public Methods
 
-    public static GameConfig Load()
+    public static GameConfig Load(string configName)
     {
         try
         {
             // Load embedded game.plgame
-            using var stream = Assembly.GetEntryAssembly()?.GetManifestResourceStream("PocketLintAOT.game.plgame");
+            using var stream = Assembly.GetEntryAssembly()?.GetManifestResourceStream($"PocketLintAOT.{configName}");
             if (stream == null)
             {
                 Logger.Error("No embedded resources found");

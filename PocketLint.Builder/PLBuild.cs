@@ -59,7 +59,7 @@ public static class PLBuild
         Logger.Log("Compiling runner...");
 
         string tempDir = SetupTempDirectory();
-        var paths = ResolvePaths(gamePath, outputExe, tempDir);
+        var paths = new Paths(gamePath, outputExe, tempDir);
         if (!ValidateInputFiles(gamePath, paths))
             return;
 
@@ -73,13 +73,14 @@ public static class PLBuild
         LogAssemblyTypes(paths.GameDll);
 
         List<string> scenePaths = ReadConfigFile(paths.ConfigFile, paths.ProjectDir);
-        if (!CopyFiles(paths))
+        var gameResources = EnumerateResources(paths.ResourcesDir);
+
+        if (!CopyFiles(paths, gameResources))
             return;
         if (!CopySceneFiles(scenePaths, paths.ProjectDir, tempDir))
             return;
 
-        List<string> sceneFiles = scenePaths.Select(Path.GetFileName).ToList();
-        GenerateProjectFiles(tempDir, paths, sceneFiles);
+        GenerateProjectFiles(tempDir, paths, gameResources);
         if (!RunRestore(tempDir))
             return;
 
@@ -96,29 +97,7 @@ public static class PLBuild
         return tempDir;
     }
 
-    private static (string ProjectDir, string OutputDir, string GameDllDir, string GameDll, string PlGame, string CoreDll, string ToolsDll, string RunnerDll, string TempPlGame, string TempGameDll, string TempCoreDll, string TempToolsDll, string TempRunnerDll, string TempTrimmerRoots, string TempILLinkSuppressions, string ConfigFile) ResolvePaths(string gamePath, string outputExe, string tempDir)
-    {
-        string projectDir = Path.GetDirectoryName(Path.GetFullPath(gamePath)) ?? throw new Exception("Invalid game path");
-        string outputDir = Path.Combine(projectDir, "build");
-        string gameDllDir = Path.Combine(projectDir, "bin", "Release", "net8.0");
-        string gameAssemblyName = Path.GetFileNameWithoutExtension(gamePath);
-        string gameDll = Path.Combine(gameDllDir, $"{gameAssemblyName}.Core.dll");
-        string plgamePath = Path.Combine(projectDir, "Manifest", "game.plgame");
-        string coreDll = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), CORE_DLL_PATH));
-        string toolsDll = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), TOOLS_DLL_PATH));
-        string runnerDll = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), RUNNER_DLL_PATH));
-        string tempPlgame = Path.Combine(tempDir, "game.plgame");
-        string tempGameDll = Path.Combine(tempDir, $"{gameAssemblyName}.Core.dll");
-        string tempCoreDll = Path.Combine(tempDir, "PocketLint.Core.dll");
-        string tempToolsDll = Path.Combine(tempDir, "PocketLint.Text.dll");
-        string tempRunnerDll = Path.Combine(tempDir, "PocketLint.Runner.dll");
-        string tempTrimmerRoots = Path.Combine(tempDir, "TrimmerRoots.xml");
-        string tempILLinkSuppressions = Path.Combine(tempDir, "ILLinkSuppressions.xml");
-        string configFile = Path.Combine(projectDir, "Config", "build.plconfig");
-        return (projectDir, outputDir, gameDllDir, gameDll, plgamePath, coreDll, toolsDll, runnerDll, tempPlgame, tempGameDll, tempCoreDll, tempToolsDll, tempRunnerDll, tempTrimmerRoots, tempILLinkSuppressions, configFile);
-    }
-
-    private static bool ValidateInputFiles(string gamePath, (string ProjectDir, string OutputDir, string GameDllDir, string GameDll, string PlGame, string CoreDll, string ToolsDll, string RunnerDll, string TempPlGame, string TempGameDll, string TempCoreDll, string TempToolsDll, string TempRunnerDll, string TempTrimmerRoots, string TempILLinkSuppressions, string ConfigFile) paths)
+    private static bool ValidateInputFiles(string gamePath, Paths paths)
     {
         if (!File.Exists(gamePath))
         {
@@ -167,6 +146,14 @@ public static class PLBuild
             Logger.Error($"Failed to read config file: {ex.Message}");
             throw;
         }
+    }
+
+    private static List<string> EnumerateResources(string resourcesDir)
+    {
+        var resources = new List<string>();
+        foreach (var resource in Directory.EnumerateFiles(resourcesDir))
+            resources.Add(Path.GetFileName(resource));
+        return resources;
     }
 
     private static bool CopySceneFiles(List<string> scenePaths, string projectDir, string tempDir)
@@ -238,7 +225,7 @@ public static class PLBuild
         }
     }
 
-    private static bool CopyFiles((string ProjectDir, string OutputDir, string GameDllDir, string GameDll, string PlGame, string CoreDll, string ToolsDll, string RunnerDll, string TempPlGame, string TempGameDll, string TempCoreDll, string TempToolsDll, string TempRunnerDll, string TempTrimmerRoots, string TempILLinkSuppressions, string ConfigFile) paths)
+    private static bool CopyFiles(Paths paths, List<string> gameResources)
     {
         Directory.CreateDirectory(paths.OutputDir);
         try
@@ -248,9 +235,14 @@ public static class PLBuild
             File.Copy(paths.CoreDll, paths.TempCoreDll, true);
             File.Copy(paths.ToolsDll, paths.TempToolsDll, true);
             File.Copy(paths.RunnerDll, paths.TempRunnerDll, true);
+
+            foreach (var file in gameResources)
+                File.Copy(Path.Combine(paths.ResourcesDir, file), Path.Combine(paths.TempDir, file), true);
+
             Logger.Log($"Copied {paths.PlGame}, size: {new FileInfo(paths.TempPlGame).Length} bytes");
             Logger.Log($"Contents of {paths.PlGame}: {File.ReadAllText(paths.TempPlGame)}");
             Logger.Log($"Copied DLLs: {paths.GameDll}, {paths.CoreDll}, {paths.ToolsDll}, {paths.RunnerDll}");
+            Logger.Log($"Copied Resources: {string.Join(", ", gameResources.Select(s => Path.Combine(paths.ResourcesDir, s)))}");
             return true;
         }
         catch (Exception ex)
@@ -260,13 +252,13 @@ public static class PLBuild
         }
     }
 
-    private static void GenerateProjectFiles(string tempDir, (string ProjectDir, string OutputDir, string GameDllDir, string GameDll, string PlGame, string CoreDll, string ToolsDll, string RunnerDll, string TempPlGame, string TempGameDll, string TempCoreDll, string TempToolsDll, string TempRunnerDll, string TempTrimmerRoots, string TempILLinkSuppressions, string ConfigFile) paths, List<string> sceneFiles)
+    private static void GenerateProjectFiles(string tempDir, Paths paths, List<string> gameResources)
     {
-        string aotCsproj = Path.Combine(tempDir, "PocketLintAOT.csproj");
+        string aotCsproj = Path.Combine(tempDir, $"PocketLintAOT.csproj");
         string programCs = Path.Combine(tempDir, "Program.cs");
         string gameAssemblyName = Path.GetFileNameWithoutExtension(paths.GameDll);
-        File.WriteAllText(aotCsproj, GenerateAotCsproj(paths.OutputDir, Path.GetFileNameWithoutExtension(paths.GameDll), sceneFiles));
-        File.WriteAllText(programCs, GenerateProgramCs(gameAssemblyName));
+        File.WriteAllText(aotCsproj, GenerateAotCsproj(paths.OutputDir, Path.GetFileNameWithoutExtension(paths.GameDll), gameResources));
+        File.WriteAllText(programCs, GenerateProgramCs(paths));
         Logger.Log($"Generated {aotCsproj}, {programCs}");
     }
 
@@ -338,123 +330,80 @@ public static class PLBuild
         }
     }
 
-    private static string GenerateAotCsproj(string outputPath, string gameProjectPath, List<string> sceneFiles)
+    private static string GenerateAotCsproj(string outputPath, string gameProjectPath, List<string> gameResources)
     {
         var gameAssemblyName = Path.GetFileNameWithoutExtension(gameProjectPath);
-        string sceneResources = string.Join("\n    ", sceneFiles.Select(s => $"<EmbeddedResource Include=\"{s}\" />"));
-        return $"""
-        <Project Sdk="Microsoft.NET.Sdk">
-          <PropertyGroup>
-            <TargetFramework>net8.0</TargetFramework>
-            <OutputType>Exe</OutputType>
-            <PublishAot>true</PublishAot>
-            <SelfContained>true</SelfContained>
-            <TrimMode>none</TrimMode>
-            <OutputPath>{outputPath}</OutputPath>
-            <AssemblyName>{gameAssemblyName}</AssemblyName>
-            <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
-            <Nullable>enable</Nullable>
-          </PropertyGroup>
-          <ItemGroup>
-            <Reference Include="PocketLint.Core">
-              <HintPath>PocketLint.Core.dll</HintPath>
-            </Reference>
-            <Reference Include="PocketLint.Text">
-              <HintPath>PocketLint.Text.dll</HintPath>
-            </Reference>
-            <Reference Include="PocketLint.Runner">
-              <HintPath>PocketLint.Runner.dll</HintPath>
-            </Reference>
-            <Reference Include="{gameAssemblyName}.Core">
-              <HintPath>{gameAssemblyName}.Core.dll</HintPath>
-            </Reference>
-          </ItemGroup>
-          <ItemGroup>
-            <PackageReference Include="OpenTK" Version="4.9.4" />
-            <PackageReference Include="System.Reflection.Metadata" Version="8.0.0" />
-          </ItemGroup>
-          <ItemGroup>
-            <Compile Include="Program.cs" />
-          </ItemGroup>
-          <ItemGroup>
-            <EmbeddedResource Include="game.plgame" />
-            {sceneResources}
-          </ItemGroup>
-          <Target Name="ValidateResource" BeforeTargets="Build">
-            <Message Importance="high" Text="[DEBUG] EmbeddedResource items: @(EmbeddedResource)" />
-            <Error Condition="!Exists('%(EmbeddedResource.Identity)')" 
-              Text="Missing embedded resource file: %(EmbeddedResource.Identity)" />
-          </Target>
-        </Project>
-        """;
+
+        var template = Scriban.Template.Parse(CodeTemplates.TemporaryProjectTemplate);
+        return template.Render(new { gameAssemblyName = gameAssemblyName, outputPath = outputPath, gameResources });
     }
 
-    private static string GenerateProgramCs(string gameAssemblyName)
+    private static string GenerateProgramCs(Paths paths)
     {
-        return $@"#nullable enable
-using System;
-using OpenTK.Windowing.GraphicsLibraryFramework;
-using PocketLint.Core.Components;
-using PocketLint.Core.Generated;
-using PocketLint.Core.Logging;
-using PocketLint.Runner;
-
-namespace {gameAssemblyName}.AOT;
-
-public static class Program
-{{
-    #region Public Methods
-
-    public static void Main()
-    {{
-        Logger.Register(new FileLogger(""runner.log""));
-        GLFW.Init();
-        try
-        {{
-            // Debugging:
-            ListEmbeddedResources();
-            var config = GameConfig.Load();
-            ComponentRegistry.Initialize();
-            Logger.Log(""Registering components..."");
-            ComponentRegistryGenerated.RegisterAll();
-            Logger.Log(""Components registered"");
-            Logger.Log(""Registering scenes..."");
-            SceneRegistryGenerated.RegisterAll();
-            Logger.Log(""Scenes registered"");
-            var runner = new GameRunner(config);
-            runner.Run();
-        }}
-        catch (Exception ex)
-        {{
-            Logger.Error($""Startup failed: {{ex.Message}}"");
-        }}
-        finally
-        {{
-            GLFW.Terminate();
-        }}
-    }}
-
-    #endregion
-
-    #region Private Methods
-
-    private static void ListEmbeddedResources()
-    {{
-        var resources = System.Reflection.Assembly.GetEntryAssembly()?.GetManifestResourceNames() ?? Array.Empty<string>();
-        Logger.Log($""Resources available: {{string.Join("", "", resources)}}"");
-    }}
-
-    #endregion
-}}";
+        var template = Scriban.Template.Parse(CodeTemplates.ProgramTemplate);
+        return template.Render(new { paths = paths, configName = "game.plgame" });
     }
 
     #endregion
 
     #region Classes and Structs
 
-    private class BuildConfig
+    private sealed class BuildConfig
     {
         [JsonPropertyName("scenes")] public List<string> Scenes { get; set; } = new();
+    }
+
+    private sealed class Paths
+    {
+        #region Properties and Fields
+
+        public string ProjectDir { get; private set; }
+        public string ResourcesDir { get; private set; }
+        public string OutputDir { get; private set; }
+        public string GameDllDir { get; private set; }
+        public string GameDll { get; private set; }
+        public string PlGame { get; private set; }
+        public string CoreDll { get; private set; }
+        public string ToolsDll { get; private set; }
+        public string RunnerDll { get; private set; }
+        public string TempDir { get; private set; }
+        public string TempPlGame { get; private set; }
+        public string TempGameDll { get; private set; }
+        public string TempCoreDll { get; private set; }
+        public string TempToolsDll { get; private set; }
+        public string TempRunnerDll { get; private set; }
+        public string ConfigFile { get; private set; }
+        public string OutputExe { get; private set; }
+        public string GameAssemblyName { get; private set; }
+
+        #endregion
+
+        #region ctor
+
+        public Paths(string gamePath, string outputExe, string tempDir)
+        {
+            var gameAssemblyName = Path.GetFileNameWithoutExtension(gamePath);
+            TempDir = tempDir;
+            ProjectDir = Path.GetDirectoryName(Path.GetFullPath(gamePath)) ?? throw new Exception("Invalid game path");
+            ResourcesDir = Path.Combine(ProjectDir, "Resources");
+            OutputDir = Path.Combine(ProjectDir, "build");
+            GameDllDir = Path.Combine(ProjectDir, "bin", "Release", "net8.0");
+            GameDll = Path.Combine(GameDllDir, $"{gameAssemblyName}.Core.dll");
+            PlGame = Path.Combine(ProjectDir, "Manifest", "game.plgame");
+            CoreDll = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), CORE_DLL_PATH));
+            ToolsDll = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), TOOLS_DLL_PATH));
+            RunnerDll = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), RUNNER_DLL_PATH));
+            TempPlGame = Path.Combine(tempDir, "game.plgame");
+            TempGameDll = Path.Combine(tempDir, $"{gameAssemblyName}.Core.dll");
+            TempCoreDll = Path.Combine(tempDir, "PocketLint.Core.dll");
+            TempToolsDll = Path.Combine(tempDir, "PocketLint.Tools.dll");
+            TempRunnerDll = Path.Combine(tempDir, "PocketLint.Runner.dll");
+            ConfigFile = Path.Combine(ProjectDir, "Config", "build.plconfig");
+            OutputExe = Path.GetFileNameWithoutExtension(outputExe);
+            GameAssemblyName = Path.GetFileNameWithoutExtension(GameDll);
+        }
+
+        #endregion
     }
 
     #endregion

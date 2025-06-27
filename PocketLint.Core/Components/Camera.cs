@@ -7,6 +7,8 @@ public class Camera : Component
 
     public static Camera Current { get; private set; }
 
+    public byte ClearColorIndex { get; set; } = 0;
+
     #endregion
 
     #region Internal Methods

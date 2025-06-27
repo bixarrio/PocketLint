@@ -2,8 +2,8 @@
 using PocketLint.Core.TimeSystem;
 using System.Collections;
 
-namespace MyDemoGame;
-public class EnemyController : Script
+namespace MyDemoGame.Scripts;
+public class EnemyController : GameScript
 {
 
     public override void Ready()
@@ -13,15 +13,15 @@ public class EnemyController : Script
 
     private IEnumerator MoveInCircle(float radius, float speed)
     {
-        float angle = 0f;
-        float centerX = Transform.LocalX;
-        float centerY = Transform.LocalY;
+        var angle = 0f;
+        var centerX = Transform.LocalX;
+        var centerY = Transform.LocalY;
 
         while (true) // Loop forever
         {
             angle += speed * Time.DeltaTime;
-            float x = centerX + MathF.Sin(angle) * radius;
-            float y = centerY + MathF.Cos(angle) * radius;
+            var x = centerX + MathF.Sin(angle) * radius;
+            var y = centerY + MathF.Cos(angle) * radius;
 
             Transform.LocalX = x;
             Transform.LocalY = y;

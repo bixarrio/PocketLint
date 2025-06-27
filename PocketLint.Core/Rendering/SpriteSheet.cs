@@ -67,7 +67,7 @@ public class SpriteSheet
         // Just a spritesheet filled with checkered patterns
         for (int i = 0; i < 256; i++)
         {
-            byte n = (byte)(2 + (i % 15));
+            byte n = 15; // (byte)(2 + (i % 15));
 
             for (int y = 0; y < 4; y++)
                 for (int x = 0; x < 4; x++)

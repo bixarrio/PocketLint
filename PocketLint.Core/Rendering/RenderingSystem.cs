@@ -58,7 +58,8 @@ public class RenderingSystem : IDisposable
             return;
         }
 
-        frameBuffer.Clear(0);
+        var clearColorIndex = (byte)Math.Clamp((int)(Camera.Current?.ClearColorIndex ?? 0), 0, Palette.COLOR_COUNT);
+        frameBuffer.Clear(clearColorIndex);
         GL.Clear(ClearBufferMask.ColorBufferBit);
 
         var renderers = scene.EntityManager.GetAllComponents<Renderer>()

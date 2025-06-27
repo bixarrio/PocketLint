@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace PocketLint.Core.Components;
 
-public abstract class Script : Component
+public abstract class GameScript : Component
 {
     #region Properties and Fields
 

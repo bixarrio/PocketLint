@@ -63,6 +63,28 @@ public class Scene
 
     #region Public Methods
 
+    public static void LoadScene(string sceneName)
+    {
+        Logger.Log($"LoadScene: {sceneName}");
+
+        foreach (var entity in Current.EntityManager.GetAllEntities())
+        {
+            var transform = Current.GetComponent<EntityTransform>(entity.Id)!;
+            if (transform.ParentId.HasValue) continue;
+
+            // We don't want to remove the camera, just reset it's position
+            if (entity.Id == Camera.Current.EntityId)
+            {
+                transform.SetWorldPosition(0, 0);
+                continue;
+            }
+
+            Current.EntityManager.RemoveEntity(entity.Id);
+        }
+
+        SceneRegistry.LoadScene(sceneName);
+    }
+
     public static uint CreateEntity(string name, float x = 0f, float y = 0f, uint? parentId = null, string? tag = null)
         => Current.CreateEntityInstance(name, x, y, parentId, tag);
     public uint CreateEntityInstance(string name, float x = 0f, float y = 0f, uint? parentId = null, string? tag = null)
@@ -199,7 +221,7 @@ public class Scene
         Input.Update();
         _physicsSystem.Update();
 
-        var scriptsList = _entityManager.GetAllComponents<Script>().ToList();
+        var scriptsList = _entityManager.GetAllComponents<GameScript>().ToList();
         foreach (var (entityId, script) in scriptsList)
             try
             {

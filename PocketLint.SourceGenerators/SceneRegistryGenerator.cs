@@ -28,9 +28,17 @@
                 .Collect();
 
             var combinedProvider = buildConfigProvider.Combine(sceneFilesProvider)
-                .Select((tuple, ctx) => Tuple.Create(tuple.Left.Path, tuple.Left.Content, tuple.Right));
+                .Select((tuple, ct) => Tuple.Create(tuple.Left.Path, tuple.Left.Content, tuple.Right));
 
-            context.RegisterSourceOutput(combinedProvider, (ctx, input) => GenerateSceneRegistry(ctx, input));
+            var assemblyNameProvider = context.CompilationProvider.Select((provider, _) =>
+            {
+                return provider.AssemblyName;
+            });
+
+            var evenMoreCombinedProvider = combinedProvider.Combine(assemblyNameProvider)
+                .Select((tuple, ct) => Tuple.Create(tuple.Left.Item1, tuple.Left.Item2, tuple.Left.Item3, tuple.Right));
+
+            context.RegisterSourceOutput(evenMoreCombinedProvider, (ctx, input) => GenerateSceneRegistry(ctx, input));
             context.RegisterSourceOutput(context.CompilationProvider, GenerateDebugScene);
         }
         #endregion
@@ -47,7 +55,7 @@
 }");
         }
 
-        private static void GenerateSceneRegistry(SourceProductionContext context, Tuple<string, string, ImmutableArray<AnonymousSceneFile>> input)
+        private static void GenerateSceneRegistry(SourceProductionContext context, Tuple<string, string, ImmutableArray<AnonymousSceneFile>, string> input)
         {
             StringBuilder debugLog = new StringBuilder();
             debugLog.AppendLine(@"namespace PocketLint.Core.Generated { public class DebugLog { public static string Log = @""");
@@ -57,6 +65,7 @@
                 if (!LogConfigInfo(debugLog, input.Item1, input.Item2)) return;
                 if (!TryParseConfig(input.Item2, debugLog, out BuildConfigData buildConfig)) return;
 
+                var assemblyName = input.Item4;
                 IReadOnlyList<AnonymousSceneFile> sceneFiles = input.Item3;
                 LogSceneFilesInfo(debugLog, sceneFiles);
 
@@ -90,12 +99,12 @@
                     foreach (SceneInfo scene in sceneInfoList)
                     {
                         string className = char.ToUpper(scene.Name[0]) + scene.Name.Substring(1) + "Scene";
-                        string code = GenerateSceneSetupClass(className, scene.Name, scene.Data);
+                        string code = GenerateSceneSetupClass(assemblyName, className, scene.Name, scene.Data);
                         debugLog.AppendLine($"Generating {className}.cs for scene {scene.Name}");
                         context.AddSource($"{className}.cs", code);
                     }
 
-                    string registryCode = GenerateSceneRegistryClass(sceneInfoList);
+                    string registryCode = GenerateSceneRegistryClass(assemblyName, sceneInfoList);
                     debugLog.AppendLine("Generating SceneRegistryGenerated.cs");
                     context.AddSource("SceneRegistryGenerated.cs", registryCode);
                 }
@@ -172,12 +181,12 @@
             {
                 var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                 sceneData = JsonSerializer.Deserialize<SceneData>(content, options);
-                if (sceneData == null || sceneData.Entity == null)
+                if (sceneData == null || sceneData.Scene == null)
                 {
                     debugLog.AppendLine($"Warning: Scene {sceneName}.plscene is empty or invalid. Content: {content.Replace("\"", "\"\"")}");
                     return false;
                 }
-                debugLog.AppendLine($"Deserialized SceneData for {sceneName}.plscene: Entity has {sceneData.Entity.Children?.Length ?? 0} children");
+                debugLog.AppendLine($"Deserialized SceneData for {sceneName}.plscene: Scene has {sceneData.Scene.Entities?.Count ?? 0} entities");
                 return true;
             }
             catch (Exception ex)
@@ -188,25 +197,29 @@
             }
         }
 
-        private static string GenerateSceneSetupClass(string className, string sceneName, SceneData sceneData)
+        private static string GenerateSceneSetupClass(string assemblyName, string className, string sceneName, SceneData sceneData)
         {
             var entities = new List<object>();
             var debugLog = new StringBuilder();
-            debugLog.AppendLine($"Processing {sceneName}: Root entity has {sceneData.Entity.Children?.Length ?? 0} children");
+            debugLog.AppendLine($"Processing {sceneName}: Root entity has {sceneData.Scene.Entities?.Count ?? 0} entities");
 
             uint entityIdCounter = 1;
             var idMap = new Dictionary<string, uint>();
 
-            foreach (var child in sceneData.Entity.Children ?? Array.Empty<EntityData>())
+            foreach (var child in sceneData.Scene.Entities ?? Enumerable.Empty<Entity>())
             {
-                debugLog.AppendLine($"Processing child: {(child.Entity?.Name ?? "null")}");
+                debugLog.AppendLine($"Processing child: {(child.Name ?? "null")}");
                 ProcessEntity(child, null, ref entityIdCounter, idMap, entities, debugLog);
             }
+
+            var spriteSheet = sceneData.Scene.SpriteSheet ?? "unknown";
 
             var template = Template.Parse(CodeTemplates.SceneSetupTemplate);
             var result = template.Render(new
             {
+                assemblyName,
                 className,
+                spriteSheet,
                 entities,
                 debugLog = debugLog.ToString()
             });
@@ -214,24 +227,24 @@
             System.Diagnostics.Debug.WriteLine(debugLog.ToString());
             return result;
 
-            void ProcessEntity(EntityData entity, uint? parentId, ref uint idCounter, Dictionary<string, uint> entityIdMap, List<object> entityList, StringBuilder log)
+            void ProcessEntity(Entity entity, uint? parentId, ref uint idCounter, Dictionary<string, uint> entityIdMap, List<object> entityList, StringBuilder log)
             {
-                if (entity?.Entity == null || string.IsNullOrEmpty(entity.Entity.Name))
+                if (entity == null || string.IsNullOrEmpty(entity.Name))
                 {
-                    log.AppendLine($"Skipping invalid entity: Entity is {(entity == null ? "null" : "not null")}, Name is {(entity?.Entity == null ? "null" : entity.Entity.Name ?? "empty")}. Children will not be processed.");
+                    log.AppendLine($"Skipping invalid entity: Entity is {(entity == null ? "null" : "not null")}, Name is {(entity == null ? "null" : entity.Name ?? "empty")}. Children will not be processed.");
                     return;
                 }
 
                 uint entityId = idCounter++;
-                entityIdMap[entity.Entity.Name] = entityId;
-                log.AppendLine($"Generating entity: {entity.Entity.Name}, ID: {entityId}, ParentID: {(parentId.HasValue ? parentId.ToString() : "none")}");
+                entityIdMap[entity.Name] = entityId;
+                log.AppendLine($"Generating entity: {entity.Name}, ID: {entityId}, ParentID: {(parentId.HasValue ? parentId.ToString() : "none")}");
 
                 float x = 0f;
                 float y = 0f;
                 var components = new List<object>();
                 int componentIndex = 0;
 
-                foreach (var component in entity.Entity.Components ?? Array.Empty<ComponentData>())
+                foreach (var component in entity.Components ?? Enumerable.Empty<Component>())
                 {
                     if (component.Type == "EntityTransform" && component.Properties != null)
                     {
@@ -247,55 +260,47 @@
                     {
                         foreach (var prop in component.Properties)
                         {
-                            string value = FormatPropertyValue(prop.Value);
+                            string value = FormatPropertyValue(prop.Value, debugLog);
                             properties.Add(new { key = prop.Key, value });
                             log.AppendLine($"Setting property: {prop.Key} = {value} for {component.Type}");
                         }
                     }
 
                     components.Add(new { type = component.Type, properties, index = componentIndex++ });
-                    log.AppendLine($"Adding component: {component.Type} to {entity.Entity.Name}");
+                    log.AppendLine($"Adding component: {component.Type} to {entity.Name}");
                 }
 
                 entityList.Add(new
                 {
                     id = entityId,
-                    name = entity.Entity.Name,
-                    tag = entity.Entity.Tag,
+                    name = entity.Name,
+                    tag = entity.Tag,
                     x = x.ToString("F2", CultureInfo.InvariantCulture),
                     y = y.ToString("F2", CultureInfo.InvariantCulture),
                     parentId = parentId.HasValue ? parentId.ToString() : null,
                     components
                 });
 
-                foreach (var child in entity.Entity.Children ?? Array.Empty<EntityData>())
+                foreach (var child in entity.Children ?? Enumerable.Empty<Entity>())
                 {
-                    log.AppendLine($"Processing child of {entity.Entity.Name}: {(child.Entity?.Name ?? "null")}");
+                    log.AppendLine($"Processing child of {entity.Name}: {(child?.Name ?? "null")}");
                     ProcessEntity(child, entityId, ref idCounter, entityIdMap, entityList, log);
                 }
             }
 
-            string FormatPropertyValue(PropertyData propData)
+            string FormatPropertyValue(Property propData, StringBuilder log)
             {
-                var value = propData.Value;
-                var type = propData.Type?.ToLowerInvariant();
-
-                if (value.ValueKind == JsonValueKind.Number)
-                {
-                    if (type == "uint" || type == "int")
-                        return value.GetInt32().ToString(CultureInfo.InvariantCulture);
-                    if (type == "float" || type == "double")
-                        return $"{value.GetSingle().ToString("F2", CultureInfo.InvariantCulture)}f";
-                    return value.GetInt32().ToString(CultureInfo.InvariantCulture);
-                }
-                if (value.ValueKind == JsonValueKind.True) return "true";
-                if (value.ValueKind == JsonValueKind.False) return "false";
-                if (value.ValueKind == JsonValueKind.String) return $"\"{value.GetString()?.Replace("\"", "\"\"")}\"";
-                return "null";
+                log.AppendLine($"\tFormatPropertyValue: type={propData.Type}, value={propData.Value}");
+                if (propData.Type == "Boolean") return (propData.Value.ValueKind == JsonValueKind.True) ? "true" : "false";
+                log.AppendLine($"\t\tType != \"Boolean\"");
+                if (propData.Value.ValueKind == JsonValueKind.String) return $"\"{propData.Value.GetString()?.Replace("\"", "\"\"")}\"";
+                log.AppendLine($"\t\tValueKind != \"String\"");
+                log.AppendLine($"\tFormatPropertyValue: type={propData.Type}, value={propData.Value}");
+                return propData.Value.ToString();
             }
         }
 
-        private static string GenerateSceneRegistryClass(List<SceneInfo> sceneDataList)
+        private static string GenerateSceneRegistryClass(string assemblyName, List<SceneInfo> sceneDataList)
         {
             var scenes = sceneDataList.Select(s => new
             {
@@ -304,76 +309,52 @@
             }).ToList();
 
             var template = Template.Parse(CodeTemplates.SceneRegistryGeneratedTemplate);
-            return template.Render(new { scenes });
+            return template.Render(new { assemblyName, scenes });
         }
         #endregion
 
         #region Classes
-        private class BuildConfigData
+        private sealed class BuildConfigData
         {
             [JsonPropertyName("scenes")]
             public string[] Scenes { get; set; }
         }
 
-        private class SceneData
+        private sealed class SceneData
         {
-            [JsonPropertyName("entity")]
-            public EntityData Entity { get; set; }
+            public Scene Scene { get; set; }
         }
-
-        private class EntityData
+        private sealed class Scene
         {
-            [JsonPropertyName("entity")]
-            public EntityWrapper Entity { get; set; }
-
-            [JsonPropertyName("components")]
-            public ComponentData[] Components { get; set; }
-
-            [JsonPropertyName("children")]
-            public EntityData[] Children { get; set; }
+            public string SpriteSheet { get; set; }
+            public List<Entity> Entities { get; set; }
         }
-
-        private class EntityWrapper
+        private sealed class Entity
         {
-            [JsonPropertyName("name")]
             public string Name { get; set; }
-
-            [JsonPropertyName("tag")]
             public string Tag { get; set; }
-
-            [JsonPropertyName("components")]
-            public ComponentData[] Components { get; set; }
-
-            [JsonPropertyName("children")]
-            public EntityData[] Children { get; set; }
+            public List<Component> Components { get; set; }
+            public List<Entity> Children { get; set; }
         }
-
-        private class ComponentData
+        private sealed class Component
         {
-            [JsonPropertyName("type")]
             public string Type { get; set; }
-
-            [JsonPropertyName("properties")]
-            public Dictionary<string, PropertyData> Properties { get; set; }
+            public Dictionary<string, Property> Properties { get; set; }
         }
-
-        private class PropertyData
+        private sealed class Property
         {
-            [JsonPropertyName("value")]
+            public string Type { get; set; }
             public JsonElement Value { get; set; }
-
-            [JsonPropertyName("type")]
-            public string Type { get; set; }
         }
 
-        private class AnonymousSceneFile
+        private sealed class AnonymousSceneFile
         {
             public string Name { get; set; }
             public string Path { get; set; }
             public string Content { get; set; }
         }
 
-        private class SceneInfo
+        private sealed class SceneInfo
         {
             public string Name { get; set; }
             public SceneData Data { get; set; }

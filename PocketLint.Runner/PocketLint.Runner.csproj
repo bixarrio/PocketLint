@@ -9,6 +9,14 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <None Remove="Resources\pl.png" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Include="Resources\pl.png" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="OpenTK" Version="4.9.4" />
     </ItemGroup>
 

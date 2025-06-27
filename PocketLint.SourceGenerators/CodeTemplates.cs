@@ -2,29 +2,13 @@
 {
     internal static class CodeTemplates
     {
-        public const string ComponentRegisterGeneratedTemplate = @"using PocketLint.Core.Components;
-namespace PocketLint.Core.Generated;
-public static class ComponentRegistryGenerated
-{
-    #region Public Methods
-
-    public static void RegisterAll()
-    {
-{{- for name in names }}
-        ComponentRegistry.Register(""{{ name }}"", () => new {{ name }}());
-{{- end #for names }}
-    }
-
-    #endregion
-}";
-
-        public const string SceneRegistryGeneratedTemplate = @"using PocketLint.Core.Entities;
-namespace PocketLint.Core.Generated;
+        public static string SceneRegistryGeneratedTemplate => @"using PocketLint.Core.Entities;
+namespace {{ assembly_name }}.Generated;
 public static class SceneRegistryGenerated
 {
     #region Public Methods
 
-    public static void RegisterAll()
+    public static void RegisterAllScenes()
     {
 {{- for scene in scenes }}
         SceneRegistry.Register(""{{ scene.scene_name }}"", {{ scene.class_name }}.Setup);
@@ -34,9 +18,12 @@ public static class SceneRegistryGenerated
     #endregion
 }";
 
-        public const string SceneSetupTemplate = @"using PocketLint.Core.Components;
+        public static string SceneSetupTemplate => @"using PocketLint.Core.Components;
 using PocketLint.Core.Entities;
-namespace PocketLint.Core.Generated;
+using PocketLint.Core.Logging;
+using PocketLint.Tools;
+using System.Reflection;
+namespace {{ assembly_name }}.Generated;
 public static class {{ class_name }}
 {
     #region Public Methods
@@ -44,6 +31,21 @@ public static class {{ class_name }}
     public static void Setup()
     {
         var entityManager = Scene.Current.EntityManager;
+
+        var entryAssembly = Assembly.GetEntryAssembly();
+        using (var stream = entryAssembly?.GetManifestResourceStream(""PocketLintAOT.{{ sprite_sheet }}""))
+        {
+            if (stream == null)
+            {
+                Logger.Error(""SpriteSheet resource not found"");
+                var resources = entryAssembly?.GetManifestResourceNames() ?? Array.Empty<string>();
+                Logger.Log($""Resources available: {string.Join("", "", resources)}"");
+            }
+            else
+            {
+                SpriteSheetImporter.Import(stream, Scene.SpriteSheet);
+            }
+        }
 
         {{~ for entity in entities ~}}
         var entity{{ entity.id }} = Scene.CreateEntity(""{{ entity.name }}"", x: {{ entity.x }}f, y: {{ entity.y }}f{{ if entity.parent_id }}, parentId: entity{{ entity.parent_id }}{{ end #if parent_id }}{{ if entity.tag }}, tag: ""{{ entity.tag }}""{{ end #if tag }});

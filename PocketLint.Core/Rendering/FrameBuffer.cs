@@ -76,6 +76,10 @@ public class FrameBuffer
 
     public byte[] GetPixelData() => _pixels;
 
+    public void DrawToScreen(byte[] indices, uint offset, uint size)
+        // TODO: Validate
+        => Array.Copy(indices, 0, _pixels, offset, size);
+
     #endregion
 
     #region Private Methods

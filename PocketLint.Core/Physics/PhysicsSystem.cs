@@ -171,7 +171,7 @@ internal class PhysicsSystem
     private void NotifyTrigger(uint entityId, Collider other)
     {
         Logger.Log($"Trigger collision: entity {entityId} with {other.EntityId} (tag: {other.Tag})");
-        foreach (var script in _entityManager.GetComponents<Script>(entityId))
+        foreach (var script in _entityManager.GetComponents<GameScript>(entityId))
             try
             {
                 script.OnTrigger(other);
@@ -185,7 +185,7 @@ internal class PhysicsSystem
     private void NotifyCollision(uint entityId, Collider other)
     {
         Logger.Log($"Solid collision: entity {entityId} with {other.EntityId} (tag: {other.Tag})");
-        foreach (var script in _entityManager.GetComponents<Script>(entityId))
+        foreach (var script in _entityManager.GetComponents<GameScript>(entityId))
             try
             {
                 script.OnCollision(other);
