@@ -1,6 +1,6 @@
 {
     "Scene": {
-        "SpriteSheet":  "sheet128x128.png",
+        "SpriteSheet": { "name": "sheet128x128.png" },
         "Entities": [
             {
                 "Name": "Player",

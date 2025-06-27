@@ -212,7 +212,7 @@
                 ProcessEntity(child, null, ref entityIdCounter, idMap, entities, debugLog);
             }
 
-            var spriteSheet = sceneData.Scene.SpriteSheet ?? "unknown";
+            var spriteSheet = sceneData.Scene.SpriteSheet;
 
             var template = Template.Parse(CodeTemplates.SceneSetupTemplate);
             var result = template.Render(new
@@ -326,8 +326,12 @@
         }
         private sealed class Scene
         {
-            public string SpriteSheet { get; set; }
+            public SpriteSheet SpriteSheet { get; set; }
             public List<Entity> Entities { get; set; }
+        }
+        private sealed class SpriteSheet
+        {
+            public string Name { get; set; }
         }
         private sealed class Entity
         {

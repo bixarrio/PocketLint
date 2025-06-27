@@ -33,7 +33,7 @@ public static class {{ class_name }}
         var entityManager = Scene.Current.EntityManager;
 
         var entryAssembly = Assembly.GetEntryAssembly();
-        using (var stream = entryAssembly?.GetManifestResourceStream(""PocketLintAOT.{{ sprite_sheet }}""))
+        using (var stream = entryAssembly?.GetManifestResourceStream(""PocketLintAOT.{{ sprite_sheet.name }}""))
         {
             if (stream == null)
             {
