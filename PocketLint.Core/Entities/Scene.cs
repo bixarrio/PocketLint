@@ -35,7 +35,7 @@ public class Scene
 
     #region ctor
 
-    public Scene(string name, KeyboardState keyboardState, EntityManager entityManager)
+    internal Scene(string name, KeyboardState keyboardState, EntityManager entityManager)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -62,6 +62,9 @@ public class Scene
     #endregion
 
     #region Public Methods
+
+    public static Scene Initialize(string name, KeyboardState keyboardState, EntityManager entityManager)
+        => new Scene(name, keyboardState, entityManager);
 
     public static void LoadScene(string sceneName)
     {

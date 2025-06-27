@@ -46,8 +46,7 @@ public class GameRunner
         _renderer = new RenderingSystem(shaderLoader, textureManager);
 
         SceneRegistry.Register("splashScene", () => SplashSceneSetup(config.StartScene));
-
-        _ = new Scene("splashScene", _window.KeyboardState, entityManager);
+        Scene.Initialize("splashScene", _window.KeyboardState, entityManager);
 
         _window.Load += OnLoad;
         _window.UpdateFrame += OnUpdate;

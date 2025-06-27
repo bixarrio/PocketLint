@@ -64,17 +64,14 @@ public class EntityManager
             return null;
         }
 
-        Logger.Log($"Checking if this entity ({entityId}) has the component");
         var component = GetComponent<T>(entityId);
         if (component != null) return component;
 
         var transform = GetComponent<EntityTransform>(entityId);
         if (transform == null) return null;
 
-        Logger.Log($"It does not. Checking if the children have the component");
         foreach (var childId in transform.Children)
         {
-            Logger.Log($"Checking child with id={childId}");
             component = GetComponent<T>(childId);
             if (component != null) return component;
         }
