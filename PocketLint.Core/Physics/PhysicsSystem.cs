@@ -1,17 +1,21 @@
 ﻿using PocketLint.Core.Components;
 using PocketLint.Core.Entities;
 using PocketLint.Core.Logging;
+using PocketLint.Core.Systems;
 using PocketLint.Core.TimeSystem;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace PocketLint.Core.Physics;
 
-internal class PhysicsSystem
+internal class PhysicsSystem : ISubSystem
 {
     #region Properties and Fields
 
     private readonly EntityManager _entityManager;
+
+    public List<ISubSystem> SubSystems { get; set; } = new();
 
     #endregion
 

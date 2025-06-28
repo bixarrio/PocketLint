@@ -5,10 +5,10 @@ using PocketLint.Core.Inputs;
 using PocketLint.Core.Logging;
 using PocketLint.Core.Physics;
 using PocketLint.Core.Rendering;
+using PocketLint.Core.Systems.GameLoopSystems;
 using PocketLint.Core.TimeSystem;
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace PocketLint.Core.Entities;
@@ -20,9 +20,9 @@ public class Scene
     private const string DEFAULT_CAMERA_NAME = "DefaultCamera";
 
     private readonly string _name;
+    private readonly GameLoopSystem _gameLoopSystem;
     private readonly EntityManager _entityManager;
-    private readonly PhysicsSystem _physicsSystem;
-    private readonly List<Coroutine> _activeCoroutines = new();
+    private readonly CoroutineSystem _coroutineSystem;
 
     public static Scene Current { get; private set; }
     public static Palette Palette { get; private set; }
@@ -35,7 +35,7 @@ public class Scene
 
     #region ctor
 
-    internal Scene(string name, KeyboardState keyboardState, EntityManager entityManager)
+    internal Scene(string name, KeyboardState keyboardState, EntityManager entityManager, GameLoopSystem gameLoopSystem)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -45,26 +45,30 @@ public class Scene
 
         _name = name;
         _entityManager = entityManager;
-        _physicsSystem = new PhysicsSystem(_entityManager);
+        _gameLoopSystem = gameLoopSystem;
+        _coroutineSystem = new CoroutineSystem();
 
         Palette = new Palette();
         SpriteSheet = new SpriteSheet();
         Current = this;
-
-        Input.Initialize(new KeyboardInputProvider(keyboardState));
-
-        var cameraId = CreateEntityInstance(DEFAULT_CAMERA_NAME);
-        AddComponentInstance<Camera>(cameraId);
-
-        SceneRegistry.LoadScene(_name);
     }
 
     #endregion
 
     #region Public Methods
 
-    public static Scene Initialize(string name, KeyboardState keyboardState, EntityManager entityManager)
-        => new Scene(name, keyboardState, entityManager);
+    public static Scene Initialize(string name, KeyboardState keyboardState, EntityManager entityManager, GameLoopSystem gameLoopSystem)
+    {
+        var scene = new Scene(name, keyboardState, entityManager, gameLoopSystem);
+        InitializeGameLoops(keyboardState, scene);
+
+        var cameraId = Scene.CreateEntity(DEFAULT_CAMERA_NAME);
+        Scene.AddComponent<Camera>(cameraId);
+
+        SceneRegistry.LoadScene(name);
+
+        return scene;
+    }
 
     public static void LoadScene(string sceneName)
     {
@@ -212,49 +216,41 @@ public class Scene
             PerformDestroy(entityId);
     }
 
-    public void AddCoroutine(Coroutine coroutine) => _activeCoroutines.Add(coroutine);
-    public void RemoveCoroutine(Coroutine coroutine) => _activeCoroutines.Remove(coroutine);
-    public void RemoveCoroutinesForEntity(uint entityId) => _activeCoroutines.RemoveAll(c => c.EntityID == entityId);
+    public void AddCoroutine(Coroutine coroutine) => _coroutineSystem.AddCoroutine(coroutine);
+    public void RemoveCoroutine(Coroutine coroutine) => _coroutineSystem.RemoveCoroutine(coroutine);
+    public void RemoveCoroutinesForEntity(uint entityId) => _coroutineSystem.RemoveCoroutinesForEntity(entityId);
 
     public void Update(float dt)
     {
         //Logger.Log($"Update scene '{_name}' with dt={dt}");
 
         Time.Update(dt);
-        Input.Update();
-        _physicsSystem.Update();
-
-        var scriptsList = _entityManager.GetAllComponents<GameScript>().ToList();
-        foreach (var (entityId, script) in scriptsList)
-            try
-            {
-                if (!script._hasStarted)
-                {
-                    script.Ready();
-                    script._hasStarted = true;
-                }
-                script.Update();
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Script lifecycle failed for entity ID {entityId}: {ex.Message}");
-            }
-        for (var i = _activeCoroutines.Count - 1; i >= 0; i--)
-        {
-            var coroutine = _activeCoroutines[i];
-            if (!AdvanceCoroutine(coroutine, dt))
-                _activeCoroutines.Remove(coroutine);
-        }
-    }
-
-    public void Render(FrameBuffer frameBuffer)
-    {
-        //Logger.Log($"Rendering scene {_name}");
+        _gameLoopSystem.ExecuteUpdate();
     }
 
     #endregion
 
     #region Private Methods
+
+    private static void InitializeGameLoops(KeyboardState keyboardState, Scene scene)
+    {
+        // Input updates first
+        var inputGameLoop = new InputUpdateLoop();
+        var inputSystem = new InputSystem(new KeyboardInputProvider(keyboardState));
+        inputGameLoop.SubSystems.Add(inputSystem);
+        scene._gameLoopSystem.AddSubSystem(inputGameLoop);
+        Input.Initialize(inputSystem);
+
+        // Player loops:
+        var playerUpdateLoop = new PlayerUpdateLoop();
+        // - GameScripts
+        playerUpdateLoop.SubSystems.Add(new GameScriptSystem(scene.EntityManager));
+        // - Physics
+        playerUpdateLoop.SubSystems.Add(new PhysicsSystem(scene.EntityManager));
+        // - Coroutines
+        playerUpdateLoop.SubSystems.Add(scene._coroutineSystem);
+        scene._gameLoopSystem.AddSubSystem(playerUpdateLoop);
+    }
 
     private bool IsAncestor(uint potentialAncestorId, uint entityId)
     {
@@ -277,26 +273,6 @@ public class Scene
     {
         RemoveCoroutinesForEntity(entityId);
         EntityManager.RemoveEntity(entityId);
-    }
-    private bool AdvanceCoroutine(Coroutine coroutine, float dt)
-    {
-        try
-        {
-            if (coroutine.CurrentYieldInstruction == null)
-                return coroutine.MoveNext();
-
-            if (!coroutine.CurrentYieldInstruction.IsDone(dt))
-                return true;
-
-            coroutine.CurrentYieldInstruction.Reset();
-
-            return coroutine.MoveNext();
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Coroutine failed for entity ID: {coroutine.EntityID}: {ex.Message}");
-            return false;
-        }
     }
 
     #endregion

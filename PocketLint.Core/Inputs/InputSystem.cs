@@ -1,8 +1,10 @@
-﻿using System;
+﻿using PocketLint.Core.Systems;
+using System;
+using System.Collections.Generic;
 
 namespace PocketLint.Core.Inputs;
 
-internal class InputSystem
+internal class InputSystem : ISubSystem, IInputSystem
 {
     #region Properties and Fields
 
@@ -32,6 +34,12 @@ internal class InputSystem
     public bool IsButtonDown(int button) => _currentState[button] && !_previousState[button];
     public bool IsButtonHeld(int button) => _currentState[button];
     public bool IsButtonUp(int button) => !_currentState[button] && _previousState[button];
+
+    #endregion
+
+    #region Explicit Methods
+
+    List<ISubSystem> ISubSystem.SubSystems { get; set; } = new();
 
     #endregion
 
