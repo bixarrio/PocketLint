@@ -118,7 +118,7 @@
                                     }
                                 }
                             },
-                            { "Type": "MyDemoGame.Scripts.PickupIndicator" }
+                            { "Type": "Animator" }
                         ]
                     },
                     {

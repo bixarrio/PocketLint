@@ -24,6 +24,16 @@ public class GameLoopSystem
         _updateSystems.Add(() => UpdateSystem(system));
     }
 
+    public void RemoveSubSystem(ISubSystem system)
+    {
+        if (system == null)
+        {
+            Logger.Error($"SubSystem cannot be null");
+            return;
+        }
+        _updateSystems.RemoveAll(action => action.Target == system);
+    }
+
     public void ExecuteUpdate()
     {
         foreach (var system in _updateSystems)
