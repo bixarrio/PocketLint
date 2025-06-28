@@ -7,6 +7,7 @@ using PocketLint.Core.Components;
 using PocketLint.Core.Entities;
 using PocketLint.Core.Logging;
 using PocketLint.Core.Rendering;
+using PocketLint.Core.Systems.GameLoopSystems;
 using PocketLint.Core.TimeSystem;
 using PocketLint.Tools;
 using ErrorCode = OpenTK.Graphics.OpenGL4.ErrorCode;
@@ -45,8 +46,10 @@ public class GameRunner
         _frameBuffer = new FrameBuffer(WIDTH, HEIGHT);
         _renderer = new RenderingSystem(shaderLoader, textureManager);
 
+        var gameLoopSystem = new GameLoopSystem();
+
         SceneRegistry.Register("splashScene", () => SplashSceneSetup(config.StartScene));
-        Scene.Initialize("splashScene", _window.KeyboardState, entityManager);
+        Scene.Initialize("splashScene", _window.KeyboardState, entityManager, gameLoopSystem);
 
         _window.Load += OnLoad;
         _window.UpdateFrame += OnUpdate;
@@ -95,7 +98,6 @@ public class GameRunner
 
     private void OnUpdate(FrameEventArgs args)
     {
-        // No-op for now
         Scene.Current.Update((float)args.Time);
     }
 

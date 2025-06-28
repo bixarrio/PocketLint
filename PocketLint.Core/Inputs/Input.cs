@@ -2,19 +2,19 @@
 using System;
 
 namespace PocketLint.Core.Inputs;
-public static class Input
+public class Input
 {
     #region Properties and Fields
 
     private const int BUTTON_COUNT = 6;
 
-    private static InputSystem _inputSystem;
+    private static IInputSystem _inputSystem;
 
     #endregion
 
     #region Public Methods
 
-    public static void Initialize(IInputProvider inputProvider)
+    public static void Initialize(IInputSystem inputSystem)
     {
         if (_inputSystem != null)
         {
@@ -22,20 +22,13 @@ public static class Input
             return;
         }
 
-        _inputSystem = new InputSystem(inputProvider);
+        _inputSystem = inputSystem;
         Logger.Log("Input system initialized");
     }
 
-    public static void Update()
-    {
-        if (_inputSystem == null)
-        {
-            Logger.Error("Input system not initialized");
-            return;
-        }
+    #endregion
 
-        _inputSystem.Update();
-    }
+    #region Public Methods
 
     public static bool IsButtonDown(int button)
     {
