@@ -1,12 +1,13 @@
 ﻿using PocketLint.Core.Components;
 using PocketLint.Core.Entities;
 using PocketLint.Core.Logging;
+using PocketLint.Core.Systems;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace PocketLint.Core.Systems.GameLoopSystems;
-public class GameScriptSystem : ISubSystem
+namespace PocketLint.Core.Animations;
+internal class AnimationSystem : ISubSystem
 {
     #region Properties and Fields
 
@@ -18,7 +19,7 @@ public class GameScriptSystem : ISubSystem
 
     #region ctor
 
-    public GameScriptSystem(EntityManager entityManager)
+    public AnimationSystem(EntityManager entityManager)
     {
         _entityManager = entityManager;
     }
@@ -29,20 +30,20 @@ public class GameScriptSystem : ISubSystem
 
     public void Update()
     {
-        var scriptsList = _entityManager.GetAllComponents<GameScript>().ToList();
-        foreach (var (entityId, script) in scriptsList)
+        var animatorsList = _entityManager.GetAllComponents<Animator>().ToList();
+        foreach (var (entityId, animator) in animatorsList)
             try
             {
-                if (!script._hasReadied)
+                if (!animator._hasReadied)
                 {
-                    script.Ready();
-                    script._hasReadied = true;
+                    animator.Ready();
+                    animator._hasReadied = true;
                 }
-                script.Update();
+                animator.Update();
             }
             catch (Exception ex)
             {
-                Logger.Error($"Script lifecycle failed for entity ID {entityId}: {ex.Message}");
+                Logger.Error($"Animator lifecycle failed for entity ID {entityId}: {ex.Message}");
             }
     }
 

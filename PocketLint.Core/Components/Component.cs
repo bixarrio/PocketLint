@@ -7,6 +7,8 @@ public abstract class Component : IComponent
 {
     #region Properties and Fields
 
+    internal bool _hasReadied;
+
     private uint _entityId;
     public uint EntityId => _entityId;
 

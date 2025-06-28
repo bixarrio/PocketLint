@@ -7,12 +7,6 @@ namespace PocketLint.Core.Components;
 
 public abstract class GameScript : Component
 {
-    #region Properties and Fields
-
-    internal bool _hasStarted;
-
-    #endregion
-
     #region Public Methods
 
     public virtual void OnCollision(Collider other) { }

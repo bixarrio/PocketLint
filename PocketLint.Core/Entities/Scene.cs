@@ -1,4 +1,5 @@
 ﻿using OpenTK.Windowing.GraphicsLibraryFramework;
+using PocketLint.Core.Animations;
 using PocketLint.Core.Components;
 using PocketLint.Core.Coroutines;
 using PocketLint.Core.Inputs;
@@ -249,6 +250,9 @@ public class Scene
         playerUpdateLoop.SubSystems.Add(new PhysicsSystem(scene.EntityManager));
         // - Coroutines
         playerUpdateLoop.SubSystems.Add(scene._coroutineSystem);
+        // Animations
+        playerUpdateLoop.SubSystems.Add(new AnimationSystem(scene.EntityManager));
+
         scene._gameLoopSystem.AddSubSystem(playerUpdateLoop);
     }
 
