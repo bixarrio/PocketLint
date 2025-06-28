@@ -11,8 +11,8 @@ public class Animator : Component
     private bool _isPlaying;
     private int _currentFrame;
     private float _animationTime;
-    private Animation _animation;
-    private SpriteRenderer _spriteRenderer;
+    private Animation? _animation;
+    private SpriteRenderer? _spriteRenderer;
 
     public bool IsPlaying => _isPlaying;
 
@@ -24,7 +24,7 @@ public class Animator : Component
     {
         _spriteRenderer = EntityManager.GetComponent<SpriteRenderer>(EntityId);
         if (_spriteRenderer == null)
-            Logger.Warn($"No SpriteRenderer found on {EntityManager.GetEntity(EntityId).Name}");
+            Logger.Warn($"No SpriteRenderer found on entity Id '{EntityId}'");
         _animation = null;
         _isPlaying = false;
         _currentFrame = 0;
@@ -42,10 +42,7 @@ public class Animator : Component
     public void Play(Animation clip)
     {
         if (clip == null) return;
-
-        if (_spriteRenderer == null) _spriteRenderer = EntityManager.GetComponent<SpriteRenderer>(EntityId);
-        if (_spriteRenderer == null) return;
-
+        if (!EnsureSpriteRenderer()) return;
         Logger.Log($"Playing animation '{clip.Name}'");
 
         _animation = clip;
@@ -68,6 +65,13 @@ public class Animator : Component
     #endregion
 
     #region Private Methods
+
+    private bool EnsureSpriteRenderer()
+    {
+        if (_spriteRenderer != null) return true;
+        _spriteRenderer = EntityManager.GetComponent<SpriteRenderer>(EntityId);
+        return _spriteRenderer != null;
+    }
 
     private void UpdateCurrentFrame()
     {
