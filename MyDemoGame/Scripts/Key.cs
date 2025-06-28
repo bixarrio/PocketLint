@@ -12,20 +12,9 @@ public class Key : GameScript
     {
         var rnd = new Random();
         Transform.SetWorldPosition(rnd.Next(0, 120), rnd.Next(0, 120));
-        _animation = CreateAnimation();
+
+        _animation = new Animation("KeyIndicator", [255, 90], frameRate: 6f);
     }
 
     public Animation GetPickupAnimation() => _animation;
-
-    #region Private Methods
-
-    private Animation CreateAnimation()
-    {
-        // key pickup animation
-        var frames = Animation.FromKeyframes([(0, 255), (5, 90), (10, 255), (15, 90), (20, 255), (25, 90)], 30);
-        var keyPickup = new Animation("KeyIndicator", frames, frameRate: 30f, endBehaviour: AnimationEndBehaviour.Reset);
-        return keyPickup;
-    }
-
-    #endregion
 }

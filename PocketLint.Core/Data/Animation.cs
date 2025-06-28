@@ -21,7 +21,7 @@ public class Animation
 
     #region ctor
 
-    public Animation(string name, List<byte> frameIndices, float frameRate, AnimationEndBehaviour endBehaviour)
+    public Animation(string name, List<byte> frameIndices, float frameRate, AnimationEndBehaviour endBehaviour = AnimationEndBehaviour.Loop)
     {
         if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Name cannot be null or empty", nameof(name));
         if (frameIndices == null || frameIndices.Count == 0) throw new ArgumentException("Frame indices cannot be null or empty", nameof(frameIndices));
@@ -38,7 +38,7 @@ public class Animation
 
     #region Public Methods
 
-    public static List<byte> FromKeyframes(List<(int framePosition, byte index)> keyframes, int totalFrames)
+    public static Animation FromKeyframes(string name, List<(int framePosition, byte index)> keyframes, int totalFrames, float frameRate, AnimationEndBehaviour endBehaviour = AnimationEndBehaviour.Loop)
     {
         if (keyframes == null || keyframes.Count == 0) throw new ArgumentException("Keyframes cannot be null or empty.", nameof(keyframes));
         if (totalFrames <= 0) throw new ArgumentException("TotalFrames must be positive.", nameof(totalFrames));
@@ -60,7 +60,7 @@ public class Animation
             frameIndices.Add(sortedKeyframes[currentKeyframeIndex].index);
         }
 
-        return frameIndices;
+        return new Animation(name, frameIndices, frameRate, endBehaviour);
     }
 
     #endregion

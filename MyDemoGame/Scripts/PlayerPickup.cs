@@ -1,6 +1,9 @@
 ﻿using PocketLint.Core.Components;
+using PocketLint.Core.Coroutines;
+using PocketLint.Core.Data;
 using PocketLint.Core.Entities;
 using PocketLint.Core.Logging;
+using System.Collections;
 
 namespace MyDemoGame.Scripts;
 public class PlayerPickup : GameScript
@@ -27,7 +30,8 @@ public class PlayerPickup : GameScript
         if (chest != null && player.HasKeyFor(chest.ChestIdentifier))
         {
             player.RemoveKeyFor(chest.ChestIdentifier);
-            _animator.Play(chest.GetPickupAnimation());
+            StopAllCoroutines();
+            StartCoroutine(PickupFlash(chest.GetPickupAnimation(), 1f));
             Scene.DestroyEntity(chest.EntityId);
         }
 
@@ -35,8 +39,16 @@ public class PlayerPickup : GameScript
         if (key != null)
         {
             player.AddKey(key);
-            _animator.Play(key.GetPickupAnimation());
+            StopAllCoroutines();
+            StartCoroutine(PickupFlash(key.GetPickupAnimation(), 1f));
             Scene.DestroyEntity(key.EntityId);
         }
+    }
+
+    private IEnumerator PickupFlash(Animation animation, float duration)
+    {
+        _animator.Play(animation);
+        yield return new WaitForSeconds(duration);
+        _animator.Stop();
     }
 }
