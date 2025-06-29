@@ -21,8 +21,7 @@ public class SpriteRenderer : Renderer
         var (renderX, renderY) = CalculateRenderPosition();
 
         // Culling
-        if (renderX < -SpriteSheet.SPRITE_SIZE || renderX >= frameBuffer.Width ||
-            renderY < -SpriteSheet.SPRITE_SIZE || renderY >= frameBuffer.Height)
+        if (ShouldCull(renderX, renderY, frameBuffer.Width, frameBuffer.Height))
             return;
 
         frameBuffer.DrawSprite(renderX, renderY, SpriteIndex, Rotation, FlipX, FlipY);
